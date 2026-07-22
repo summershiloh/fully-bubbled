@@ -47,7 +47,7 @@ function startSinglePlayer() {
   isMultiplayerMode = false;
   showScreen('game');
   hideGameOverlay();
-  ui.hudOpponent.style.display = 'none';
+  if (ui.hudOpponent) ui.hudOpponent.style.display = 'none';
   if (gameScene) gameScene.dispose();
   if (mpScenes[0]) { mpScenes[0].dispose(); mpScenes[0] = null; }
   if (mpScenes[1]) { mpScenes[1].dispose(); mpScenes[1] = null; }
