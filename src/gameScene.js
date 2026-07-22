@@ -76,8 +76,10 @@ export class GameScene {
     );
     this.laserBeam = new LaserBeam(this.scene);
     this.laserBeam.onHit = (bubble, key) => this.processBubbleHit(bubble, key, false);
+    this.laserBeam.onInvaderHit = (invader) => this.processInvaderHit(invader);
     this.giantBall = new GiantBallProjectile(this.scene);
     this.giantBall.onHit = (bubble, key) => this.processBubbleHit(bubble, key, false, true);
+    this.giantBall.onInvaderHit = (invader) => this.processInvaderHit(invader);
 
     this.raycaster = new Raycaster();
 
@@ -501,12 +503,17 @@ export class GameScene {
 
       if (hitInvader) {
         this.removeBullet(i);
-        hitInvader.startPop();
-        this.spawnParticles(hitInvader.group.position.x, hitInvader.group.position.y, 18);
-        this.addScore(25);
-        audio.pop();
+        this.processInvaderHit(hitInvader);
       }
     }
+  }
+
+  processInvaderHit(invader) {
+    if (invader.popTime > 0) return;
+    invader.startPop();
+    this.spawnParticles(invader.group.position.x, invader.group.position.y, 18);
+    this.addScore(25);
+    audio.pop();
   }
 
   processBubbleHit(bubble, key, silent = false, explosive = false) {
@@ -527,6 +534,14 @@ export class GameScene {
           this.processBubbleHit(b, k, silent, false);
         }
       }
+      for (const inv of this.invaders) {
+        if (!inv.alive || inv.popTime > 0) continue;
+        const dx = inv.group.position.x - center.x;
+        const dy = inv.group.position.y - center.y;
+        if (Math.sqrt(dx * dx + dy * dy) < EXPLOSION_RADIUS * 1.5) {
+          this.processInvaderHit(inv);
+        }
+      }
     } else {
       bubble.startPop();
 
@@ -542,6 +557,14 @@ export class GameScene {
             b.triggerJiggle(1.5 * (1 - dist / EXPLOSION_RADIUS));
           }
         }
+        for (const inv of this.invaders) {
+          if (!inv.alive || inv.popTime > 0) continue;
+          const dx = inv.group.position.x - center.x;
+          const dy = inv.group.position.y - center.y;
+          if (Math.sqrt(dx * dx + dy * dy) < EXPLOSION_RADIUS) {
+            this.processInvaderHit(inv);
+          }
+        }
       } else if (bubble.type === 'explosive') {
         this.spawnParticles(bubble.group.position.x, bubble.group.position.y, 20);
         const center = bubble.group.position;
@@ -552,6 +575,14 @@ export class GameScene {
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < EXPLOSION_RADIUS) {
             b.triggerJiggle(1.5 * (1 - dist / EXPLOSION_RADIUS));
+          }
+        }
+        for (const inv of this.invaders) {
+          if (!inv.alive || inv.popTime > 0) continue;
+          const dx = inv.group.position.x - center.x;
+          const dy = inv.group.position.y - center.y;
+          if (Math.sqrt(dx * dx + dy * dy) < EXPLOSION_RADIUS) {
+            this.processInvaderHit(inv);
           }
         }
       } else if (bubble.type === 'fragile') {
@@ -812,8 +843,8 @@ export class GameScene {
     }
     this.laserBeam.setAimTarget(laserTargetX);
     this.laserBeam.setPlayerPosition(this.playerX, this.playerY);
-    this.laserBeam.update(delta, this.bubbles);
-    this.giantBall.update(delta, this.bubbles, this.leftBound, this.rightBound, this.ceilY, this.floorY);
+    this.laserBeam.update(delta, this.bubbles, this.invaders);
+    this.giantBall.update(delta, this.bubbles, this.leftBound, this.rightBound, this.ceilY, this.floorY, this.invaders);
 
     let removeKeys = [];
     for (const [key, bubble] of this.bubbles) {

@@ -157,7 +157,7 @@ export class LaserBeam {
     this.playerY = y;
   }
 
-  update(delta, bubbles) {
+  update(delta, bubbles, invaders) {
     if (!this.active) return;
     this.lifetime += delta;
     this._hitCooldown = Math.max(0, this._hitCooldown - delta);
@@ -180,6 +180,17 @@ export class LaserBeam {
         if (by > beamBottom && by < beamTop && Math.abs(bx - beamX) < halfWidth) {
           if (this.onHit) this.onHit(bubble, key);
           hitAny = true;
+        }
+      }
+      if (invaders) {
+        for (const invader of invaders) {
+          if (!invader.alive || invader.popTime > 0) continue;
+          const ix = invader.group.position.x;
+          const iy = invader.group.position.y;
+          if (iy > beamBottom && iy < beamTop && Math.abs(ix - beamX) < halfWidth) {
+            if (this.onInvaderHit) this.onInvaderHit(invader);
+            hitAny = true;
+          }
         }
       }
       if (hitAny) this._hitCooldown = 0.05;

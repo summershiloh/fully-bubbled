@@ -15,6 +15,7 @@ export class GiantBallProjectile {
     this.lifetime = 0;
     this.onHit = null;
     this._hitBubbles = new Set();
+    this._hitInvaders = new Set();
     this.leftBound = 0;
     this.rightBound = 0;
     this.ceilY = 0;
@@ -36,6 +37,7 @@ export class GiantBallProjectile {
     this.lifetime = 0;
     this.active = true;
     this._hitBubbles.clear();
+    this._hitInvaders.clear();
 
     if (!this.mesh) {
       const geo = new SphereGeometry(BALL_RADIUS, 32, 24);
@@ -97,7 +99,7 @@ export class GiantBallProjectile {
     return true;
   }
 
-  update(delta, bubbles, leftBound, rightBound, ceilY, floorY) {
+  update(delta, bubbles, leftBound, rightBound, ceilY, floorY, invaders) {
     if (!this.active) return;
 
     this.leftBound = leftBound;
@@ -146,7 +148,20 @@ export class GiantBallProjectile {
       }
     }
 
-    if (this._hitBubbles.size > 0) {
+    if (invaders) {
+      for (const invader of invaders) {
+        if (!invader.alive || invader.popTime > 0 || this._hitInvaders.has(invader.id)) continue;
+        const dx = this.x - invader.group.position.x;
+        const dy = this.y - invader.group.position.y;
+        if (dx * dx + dy * dy < hitRadiusSq) {
+          this._hitInvaders.add(invader.id);
+          if (this.onInvaderHit) this.onInvaderHit(invader);
+          hitAny = true;
+        }
+      }
+    }
+
+    if (this._hitBubbles.size > 0 || this._hitInvaders.size > 0) {
       this.vx *= 0.98;
       this.vy *= 0.98;
     }
@@ -156,6 +171,7 @@ export class GiantBallProjectile {
     this.active = false;
     if (this.mesh) this.mesh.visible = false;
     this._hitBubbles.clear();
+    this._hitInvaders.clear();
   }
 
   dispose() {
