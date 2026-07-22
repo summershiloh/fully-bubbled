@@ -24,6 +24,7 @@ export class MultiplayerClient {
       player_exited: [],
       session_countdown: [],
       session_end: [],
+      disconnected: [],
       error: [],
       connected: []
     };
@@ -63,6 +64,7 @@ export class MultiplayerClient {
         this.connected = false;
         this.inRoom = false;
         this.roomCode = null;
+        this.dispatchEvent('disconnected', { message: 'Connection lost' });
         this.dispatchEvent('error', { message: 'Disconnected from server' });
       };
 

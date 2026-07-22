@@ -1,5 +1,40 @@
 let gameScene = null;
 let fireInterval = null;
+let touchX = 0, touchY = 0;
+
+function fireOnce(gs) {
+  if (!gs || !gs.isRunning || gs.gameOver || gs.firingPaused) return;
+  if (gs.powerupMgr?.isFull) {
+    gs.tryActivatePowerup();
+  } else if (gs.giantBallActive) {
+    gs._fireGiantBall();
+  } else if (!gs.powerupMgr?.laserActive) {
+    gs.fireBullet();
+  }
+}
+
+function startFire(gs) {
+  fireOnce(gs);
+  if (fireInterval) clearInterval(fireInterval);
+  if (!gs || gs.powerupMgr?.laserActive || gs.giantBallActive || gs.powerupMgr?.isFull) return;
+  fireInterval = setInterval(() => {
+    if (!gs || !gs.isRunning || gs.gameOver || gs.firingPaused) {
+      clearInterval(fireInterval); fireInterval = null; return;
+    }
+    if (gs.powerupMgr?.isFull) {
+      gs.tryActivatePowerup();
+      clearInterval(fireInterval); fireInterval = null; return;
+    }
+    if (gs.powerupMgr?.laserActive || gs.giantBallActive) {
+      clearInterval(fireInterval); fireInterval = null; return;
+    }
+    gs.fireBullet();
+  }, 100);
+}
+
+function stopFire() {
+  if (fireInterval) { clearInterval(fireInterval); fireInterval = null; }
+}
 
 export function initInput(sceneRef) {
   gameScene = sceneRef;
@@ -24,12 +59,10 @@ export function initInput(sceneRef) {
     else if (key === 'e' || key === 'E') gameScene?.handleInput('powerup', false);
   });
 
-  let touchX = 0, touchY = 0;
   document.addEventListener('touchstart', (e) => {
     const touch = e.touches[0];
     touchX = touch.clientX; touchY = touch.clientY;
-    gameScene?.handleInput('shoot', true);
-    setTimeout(() => gameScene?.handleInput('shoot', false), 100);
+    startFire(gameScene);
   });
 
   document.addEventListener('touchmove', (e) => {
@@ -46,6 +79,7 @@ export function initInput(sceneRef) {
 
   document.addEventListener('touchend', () => {
     ['left','right','up','down'].forEach(d => gameScene?.handleInput(d, false));
+    stopFire();
   });
 }
 
@@ -61,36 +95,12 @@ export function initReticleAndFire(sceneRef) {
 
   document.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
-    const gs = gameScene;
-    if (!gs || !gs.isRunning || gs.gameOver || gs.firingPaused) return;
-    if (gs.powerupMgr?.isFull) {
-      gs.tryActivatePowerup();
-    } else if (gs.giantBallActive) {
-      gs._fireGiantBall();
-    } else if (!gs.powerupMgr?.laserActive) {
-      gs.fireBullet();
-    }
-    if (fireInterval) clearInterval(fireInterval);
-    if (!gs.powerupMgr?.laserActive && !gs.giantBallActive && !gs.powerupMgr?.isFull) {
-      fireInterval = setInterval(() => {
-        if (!gs || !gs.isRunning || gs.gameOver || gs.firingPaused) {
-          clearInterval(fireInterval); fireInterval = null; return;
-        }
-        if (gs.powerupMgr?.isFull) {
-          gs.tryActivatePowerup();
-          clearInterval(fireInterval); fireInterval = null; return;
-        }
-        if (gs.powerupMgr?.laserActive || gs.giantBallActive) {
-          clearInterval(fireInterval); fireInterval = null; return;
-        }
-        gs.fireBullet();
-      }, 100);
-    }
+    startFire(gameScene);
   });
 
   document.addEventListener('mouseup', (e) => {
     if (e.button !== 0) return;
-    if (fireInterval) { clearInterval(fireInterval); fireInterval = null; }
+    stopFire();
   });
 
   const reticleObserver = new MutationObserver(() => {

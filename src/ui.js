@@ -68,7 +68,8 @@ const ui = {
   hudLevel1: $('hudLevel1'),
   hudLevel2: $('hudLevel2'),
   hudTimer1: $('hudTimer1'),
-  hudTimer2: $('hudTimer2')
+  hudTimer2: $('hudTimer2'),
+  mpToast: $('mpToast')
 };
 
 export function getUI() { return ui; }
@@ -79,6 +80,18 @@ export function getMultiplayer() { return multiplayer; }
 export function setMultiplayer(m) { multiplayer = m; }
 export function setGameLoopRunning(r) { gameLoopRunning = r; }
 export function getGameLoopRunning() { return gameLoopRunning; }
+
+let toastTimeout = null;
+
+export function showNotification(text, type = 'info', duration = 3000) {
+  const el = ui.mpToast;
+  if (!el) return;
+  clearTimeout(toastTimeout);
+  el.textContent = text;
+  el.className = 'mp-toast ' + type;
+  el.classList.add('visible');
+  toastTimeout = setTimeout(() => el.classList.remove('visible'), duration);
+}
 
 export function showScreen(name) {
   Object.values(screens).forEach(s => { if (s) s.classList.remove('active'); });
@@ -297,17 +310,26 @@ export function setupMultiplayerHandlers(multiplayerClient, onGameStart, onPlaye
   multiplayer.on('player_joined', (msg) => {
     updatePlayersList();
     setLobbyStatus(`${msg.name} joined the room!`);
+    showNotification(`${msg.name} joined`, 'info');
   });
 
   multiplayer.on('player_ready_update', () => updatePlayersList());
-  multiplayer.on('player_left', () => updatePlayersList());
 
-  multiplayer.on('player_disconnected', () => {
+  multiplayer.on('player_left', (msg) => {
+    updatePlayersList();
+    showNotification('Player left', 'warning');
+  });
+
+  multiplayer.on('player_disconnected', (msg) => {
     setLobbyStatus('Opponent disconnected!');
+    showNotification('Connection lost', 'error');
     setTimeout(() => { showScreen('title'); multiplayer.disconnect(); }, 2000);
   });
 
-  multiplayer.on('game_start', (msg) => { if (onGameStart) onGameStart(msg); });
+  multiplayer.on('game_start', (msg) => {
+    showNotification('Game starting!', 'success', 2000);
+    if (onGameStart) onGameStart(msg);
+  });
 
   multiplayer.on('player_game_over', (msg) => { if (onPlayerGameOver) onPlayerGameOver(msg); });
 
@@ -317,11 +339,19 @@ export function setupMultiplayerHandlers(multiplayerClient, onGameStart, onPlaye
 
   multiplayer.on('session_end', (msg) => { if (onSessionEnd) onSessionEnd(msg); });
 
-  multiplayer.on('error', (msg) => setLobbyStatus(`Error: ${msg.message}`));
+  multiplayer.on('disconnected', (msg) => {
+    showNotification(msg.message || 'Disconnected', 'error', 5000);
+  });
+
+  multiplayer.on('error', (msg) => {
+    setLobbyStatus(`Error: ${msg.message}`);
+    showNotification(msg.message, 'error');
+  });
 
   multiplayer.on('game_over', (msg) => {
     gameLoopRunning = false;
     const isWin = msg.winner === multiplayer?.clientId;
+    showNotification(isWin ? 'You win!' : 'You lose', isWin ? 'success' : 'error', 4000);
     showGameOverlay(isWin ? 'YOU WIN!' : 'GAME OVER', isWin ? 'You defeated your opponent!' : 'You lost this round!');
   });
 }
