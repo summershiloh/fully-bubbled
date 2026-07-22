@@ -54,7 +54,7 @@ export function initReticleAndFire(sceneRef) {
   const reticle = document.querySelector('#targetReticle');
 
   document.addEventListener('mousemove', (e) => {
-    if (reticle && screens?.game?.classList.contains('active')) {
+    if (reticle && isGameActive()) {
       reticle.style.left = e.clientX + 'px'; reticle.style.top = e.clientY + 'px';
     }
   });
@@ -94,9 +94,14 @@ export function initReticleAndFire(sceneRef) {
   });
 
   const reticleObserver = new MutationObserver(() => {
-    if (reticle) reticle.style.display = screens?.game?.classList.contains('active') ? 'flex' : 'none';
+    if (reticle) reticle.style.display = isGameActive() ? 'flex' : 'none';
   });
   if (screens?.game) reticleObserver.observe(screens.game, { attributes: true, attributeFilter: ['class'] });
+  if (screens?.mp) reticleObserver.observe(screens.mp, { attributes: true, attributeFilter: ['class'] });
+}
+
+function isGameActive() {
+  return screens?.game?.classList.contains('active') || screens?.mp?.classList.contains('active');
 }
 
 export function updateSceneRef(sceneRef) {

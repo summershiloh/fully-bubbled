@@ -12,7 +12,6 @@
 </head>
 <body>
   <div id="app">
-    <canvas id="gameCanvas"></canvas>
 
     <!-- Title Screen -->
     <div id="titleScreen" class="screen active">
@@ -33,9 +32,13 @@
     </div>
 
     <!-- Lobby Screen -->
-      <div id="lobbyScreen" class="screen">
+    <div id="lobbyScreen" class="screen">
       <div class="lobby-panel">
         <h2 class="lobby-title">MULTIPLAYER LOBBY</h2>
+        <div class="lobby-name-row">
+          <label class="lobby-name-label" for="playerNameInput">YOUR NAME</label>
+          <input type="text" id="playerNameInput" maxlength="12" placeholder="Player" class="name-field" />
+        </div>
         <div id="lobbyMain" class="lobby-main">
           <button id="btnCreateRoom" class="btn-bubble">CREATE ROOM</button>
           <button id="btnJoinRoom" class="btn-bubble">JOIN ROOM</button>
@@ -95,7 +98,7 @@
       </div>
     </div>
 
-    <!-- Game HUD -->
+    <!-- Game HUD - Single Player -->
     <div id="gameHUD" class="screen" style="display:none;">
       <div class="hud-top-bar">
         <div id="powerupFill"></div>
@@ -134,47 +137,127 @@
           </div>
         </div>
       </div>
-      <div id="gameMenuOverlay" class="game-menu-overlay" style="display:none;">
-        <div class="game-menu-panel">
-          <button id="btnMenuClose" class="menu-close-btn" aria-label="Close">&#10005;</button>
-          <h3 class="menu-panel-title">MENU</h3>
-          <div class="menu-volume-row">
-            <span class="menu-volume-label">SFX</span>
-            <input type="range" id="sfxSlider" class="menu-slider" min="0" max="100" value="10" />
+    </div>
+
+    <!-- Game HUD - Multiplayer Split Screen -->
+    <div id="mpHUD" class="screen" style="display:none;">
+      <div class="mp-split">
+        <!-- Player 1 (local) side -->
+        <div class="mp-side" id="mpSide1">
+          <div class="hud-top-bar mp-hud-bar">
+            <div class="powerup-fill" id="powerupFill1"></div>
+            <div class="hud-info-row">
+              <div class="hud-group hud-left">
+                <div class="hud-score" id="hudScore1">SCORE: 0</div>
+              </div>
+              <div class="hud-group hud-center">
+                <div class="hud-level" id="hudLevel1">LEVEL 1</div>
+                <div class="hud-sep"></div>
+                <div class="hud-timer" id="hudTimer1">0:00</div>
+                <div class="hud-sep"></div>
+                <div class="hud-push-group">
+                  <span class="hud-push-value" id="descendTimerValue1">--</span>
+                  <span class="hud-push-label">PUSH</span>
+                </div>
+              </div>
+              <div class="hud-group hud-right">
+                <span class="powerup-text" id="powerupText1"></span>
+                <span class="player-name-tag" id="playerNameTag1">Player 1</span>
+              </div>
+            </div>
           </div>
-          <div class="menu-volume-row">
-            <span class="menu-volume-label">MUSIC</span>
-            <input type="range" id="musicSlider" class="menu-slider" min="0" max="100" value="0" />
+          <canvas id="gameCanvas1"></canvas>
+          <div class="mp-side-overlay" id="mpOverlay1" style="display:none;">
+            <div class="mp-side-overlay-content">
+              <h2 class="mp-overlay-title" id="mpOverlayTitle1">GAME OVER</h2>
+              <p class="mp-overlay-score" id="mpOverlayScore1"></p>
+              <p class="mp-overlay-waiting" id="mpOverlayWaiting1" style="display:none;">Waiting on player decision...</p>
+              <div class="mp-overlay-buttons" id="mpOverlayButtons1" style="display:none;">
+                <button class="btn-bubble mp-retry-btn" id="mpRetry1">RETRY</button>
+                <button class="btn-bubble mp-exit-btn" id="mpExit1">EXIT SESSION</button>
+              </div>
+            </div>
           </div>
-          <div class="menu-volume-row">
-            <span class="menu-volume-label">SFX THEME</span>
-            <label class="menu-toggle">
-              <input type="checkbox" id="customSfxToggle" checked />
-              <span class="menu-toggle-track"></span>
-            </label>
+        </div>
+        <div class="mp-divider"></div>
+        <!-- Player 2 (opponent) side -->
+        <div class="mp-side" id="mpSide2">
+          <div class="hud-top-bar mp-hud-bar">
+            <div class="powerup-fill" id="powerupFill2"></div>
+            <div class="hud-info-row">
+              <div class="hud-group hud-left">
+                <div class="hud-score" id="hudScore2">SCORE: 0</div>
+              </div>
+              <div class="hud-group hud-center">
+                <div class="hud-level" id="hudLevel2">LEVEL 1</div>
+                <div class="hud-sep"></div>
+                <div class="hud-timer" id="hudTimer2">0:00</div>
+                <div class="hud-sep"></div>
+                <div class="hud-push-group">
+                  <span class="hud-push-value" id="descendTimerValue2">--</span>
+                  <span class="hud-push-label">PUSH</span>
+                </div>
+              </div>
+              <div class="hud-group hud-right">
+                <span class="powerup-text" id="powerupText2"></span>
+                <span class="player-name-tag" id="playerNameTag2">Player 2</span>
+              </div>
+            </div>
           </div>
-          <div class="menu-actions">
-            <button id="btnMenuRetry" class="btn-bubble">RETRY</button>
-            <button id="btnMenuExit" class="btn-bubble">EXIT</button>
+          <canvas id="gameCanvas2"></canvas>
+          <div class="mp-side-overlay" id="mpOverlay2" style="display:none;">
+            <div class="mp-side-overlay-content">
+              <h2 class="mp-overlay-title" id="mpOverlayTitle2">GAME OVER</h2>
+              <p class="mp-overlay-score" id="mpOverlayScore2"></p>
+              <p class="mp-overlay-waiting" id="mpOverlayWaiting2" style="display:none;">Waiting on player decision...</p>
+              <div class="mp-overlay-buttons" id="mpOverlayButtons2" style="display:none;">
+                <button class="btn-bubble mp-retry-btn" id="mpRetry2">RETRY</button>
+                <button class="btn-bubble mp-exit-btn" id="mpExit2">EXIT SESSION</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      </div>
-      <div id="trackName" class="track-name" style="display:none;"></div>
-      <div id="hudOpponent" class="hud-opponent" style="display:none;">
-        <div id="opponentName" class="opponent-name">Opponent</div>
-        <div id="opponentScore" class="opponent-score">0</div>
-      </div>
+    </div>
 
-      <div id="gameOverlay" class="game-overlay" style="display:none;">
-        <div class="overlay-content">
-          <h2 id="overlayTitle" class="overlay-title">GAME OVER</h2>
-          <p id="overlayMessage" class="overlay-message"></p>
-          <p id="overlayScore" class="overlay-score"></p>
-          <div class="overlay-buttons">
-            <button id="btnRetry" class="btn-bubble">RETRY</button>
-            <button id="btnBackToMenu" class="btn-bubble">TITLE</button>
-          </div>
+    <!-- Shared overlays (always available) -->
+    <div id="trackName" class="track-name" style="display:none;"></div>
+
+    <div id="gameMenuOverlay" class="game-menu-overlay" style="display:none;">
+      <div class="game-menu-panel">
+        <button id="btnMenuClose" class="menu-close-btn" aria-label="Close">&#10005;</button>
+        <h3 class="menu-panel-title">MENU</h3>
+        <div class="menu-volume-row">
+          <span class="menu-volume-label">SFX</span>
+          <input type="range" id="sfxSlider" class="menu-slider" min="0" max="100" value="10" />
+        </div>
+        <div class="menu-volume-row">
+          <span class="menu-volume-label">MUSIC</span>
+          <input type="range" id="musicSlider" class="menu-slider" min="0" max="100" value="0" />
+        </div>
+        <div class="menu-volume-row">
+          <span class="menu-volume-label">SFX THEME</span>
+          <label class="menu-toggle">
+            <input type="checkbox" id="customSfxToggle" checked />
+            <span class="menu-toggle-track"></span>
+          </label>
+        </div>
+        <div class="menu-actions">
+          <button id="btnMenuRetry" class="btn-bubble">RETRY</button>
+          <button id="btnMenuExit" class="btn-bubble">EXIT</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Single player game over overlay -->
+    <div id="gameOverlay" class="game-overlay" style="display:none;">
+      <div class="overlay-content">
+        <h2 id="overlayTitle" class="overlay-title">GAME OVER</h2>
+        <p id="overlayMessage" class="overlay-message"></p>
+        <p id="overlayScore" class="overlay-score"></p>
+        <div class="overlay-buttons">
+          <button id="btnRetry" class="btn-bubble">RETRY</button>
+          <button id="btnBackToMenu" class="btn-bubble">TITLE</button>
         </div>
       </div>
     </div>
@@ -184,6 +267,9 @@
       Connecting...
     </div>
 
+    <!-- Multiplayer notification toast -->
+    <div id="mpToast" class="mp-toast"></div>
+
     <!-- Targeting Reticle -->
     <div id="targetReticle" class="target-reticle">
       <div class="reticle-dot"></div>
@@ -191,13 +277,6 @@
       <div class="reticle-cross-h"></div>
       <div class="reticle-cross-v"></div>
     </div>
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15,3 21,3 21,9"></polyline>
-        <polyline points="9,21 3,21 3,15"></polyline>
-        <line x1="21" y1="3" x2="14" y2="10"></line>
-        <line x1="3" y1="21" x2="10" y2="14"></line>
-      </svg>
-    </button>
   </div>
   <script type="importmap">
   {

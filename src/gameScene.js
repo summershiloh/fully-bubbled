@@ -23,9 +23,12 @@ import { createBoardWalls, getBounds } from './game/board.js';
 import { Invader, getInvaderCount } from './invaders/Invader.js';
 
 export class GameScene {
-  constructor(canvas, onGameEvent) {
+  constructor(canvas, onGameEvent, options = {}) {
     this.canvas = canvas;
     this.onGameEvent = onGameEvent || (() => {});
+    this.sideIndex = options.sideIndex || 0;
+    this.splitScreen = options.splitScreen || false;
+    this.isLocal = options.isLocal !== undefined ? options.isLocal : true;
     this.bubbles = new Map();
     this.bullets = [];
     this.particles = [];
@@ -72,7 +75,8 @@ export class GameScene {
 
     this.powerupMgr = new PowerupManager(
       () => this.activateLaser(),
-      () => this.deactivateLaser()
+      () => this.deactivateLaser(),
+      { sideIndex: this.sideIndex, splitScreen: this.splitScreen }
     );
     this.laserBeam = new LaserBeam(this.scene);
     this.laserBeam.onHit = (bubble, key) => this.processBubbleHit(bubble, key, false);
@@ -82,25 +86,28 @@ export class GameScene {
 
     this.raycaster = new Raycaster();
 
-    this.canvas.addEventListener('mousemove', (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      this.mouseX = e.clientX - rect.left;
-      this.mouseY = e.clientY - rect.top;
-      this.mouseInView = true;
-    });
+    if (this.isLocal) {
+      this.canvas.addEventListener('mousemove', (e) => {
+        const rect = this.canvas.getBoundingClientRect();
+        this.mouseX = e.clientX - rect.left;
+        this.mouseY = e.clientY - rect.top;
+        this.mouseInView = true;
+      });
 
-    this.canvas.addEventListener('mouseleave', () => {
-      this.mouseInView = false;
-    });
+      this.canvas.addEventListener('mouseleave', () => {
+        this.mouseInView = false;
+      });
 
-    this.canvas.addEventListener('mousedown', (e) => {
-      if (e.button === 0) {
-        this.handleInput('shoot', true);
-        setTimeout(() => this.handleInput('shoot', false), 50);
-      }
-    });
+      this.canvas.addEventListener('mousedown', (e) => {
+        if (e.button === 0) {
+          this.handleInput('shoot', true);
+          setTimeout(() => this.handleInput('shoot', false), 50);
+        }
+      });
+    }
 
-    window.addEventListener('resize', () => this.onResize());
+    this._resizeHandler = () => this.onResize();
+    window.addEventListener('resize', this._resizeHandler);
   }
 
   setupRenderer() {
@@ -111,10 +118,19 @@ export class GameScene {
       powerPreference: 'high-performance'
     });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    const { w, h } = this._getContainerSize();
+    this.renderer.setSize(w, h);
     this.renderer.toneMapping = 3;
     this.renderer.toneMappingExposure = 1.2;
     this.renderer.outputColorSpace = 'srgb';
+  }
+
+  _getContainerSize() {
+    if (this.splitScreen && this.canvas.parentElement) {
+      const parent = this.canvas.parentElement;
+      return { w: parent.clientWidth || window.innerWidth / 2, h: parent.clientHeight || window.innerHeight };
+    }
+    return { w: window.innerWidth, h: window.innerHeight };
   }
 
   setupScene() {
@@ -1012,8 +1028,7 @@ export class GameScene {
   }
 
   onResize() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const { w, h } = this._getContainerSize();
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
@@ -1024,6 +1039,7 @@ export class GameScene {
   }
 
   dispose() {
+    window.removeEventListener('resize', this._resizeHandler);
     for (const [, bubble] of this.bubbles) {
       this.scene.remove(bubble.group);
       bubble.dispose();

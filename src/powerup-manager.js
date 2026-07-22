@@ -1,5 +1,5 @@
 export class PowerupManager {
-  constructor(onLaserActivate, onLaserDeactivate) {
+  constructor(onLaserActivate, onLaserDeactivate, options = {}) {
     this.MAX_POWER = 500;
     this.FILL_RATE = 0.5;
     this.DEPLETE_RATE = 64;
@@ -12,6 +12,8 @@ export class PowerupManager {
     this._blinkTimer = 0;
     this._textVisible = true;
     this._depleteAccum = 0;
+    this.sideIndex = options.sideIndex || 0;
+    this.splitScreen = options.splitScreen || false;
   }
 
   addScore(points) {
@@ -50,9 +52,22 @@ export class PowerupManager {
     this.updateUI();
   }
 
+  _getElements() {
+    if (this.splitScreen) {
+      const suffix = this.sideIndex + 1;
+      return {
+        fillEl: document.getElementById('powerupFill' + suffix),
+        textEl: document.getElementById('powerupText' + suffix)
+      };
+    }
+    return {
+      fillEl: document.getElementById('powerupFill'),
+      textEl: document.getElementById('powerupText')
+    };
+  }
+
   updateUI() {
-    const fillEl = document.getElementById('powerupFill');
-    const textEl = document.getElementById('powerupText');
+    const { fillEl, textEl } = this._getElements();
     if (!fillEl || !textEl) return;
     const pct = (this.power / this.MAX_POWER) * 100;
     fillEl.style.width = Math.max(0, Math.min(100, pct)) + '%';

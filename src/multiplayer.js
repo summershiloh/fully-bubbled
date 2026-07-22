@@ -17,11 +17,21 @@ export class MultiplayerClient {
       opponent_input: [],
       opponent_state: [],
       game_over: [],
+      player_game_over: [],
       player_disconnected: [],
       player_left: [],
+      player_retry: [],
+      player_exited: [],
+      session_countdown: [],
+      session_end: [],
       error: [],
       connected: []
     };
+  }
+
+  setName(name) {
+    this.name = name || this.name;
+    this.send({ type: 'set_name', name: this.name });
   }
 
   connect(serverUrl = null) {
@@ -127,11 +137,11 @@ export class MultiplayerClient {
   }
 
   createRoom() {
-    this.send({ type: 'create_room' });
+    this.send({ type: 'create_room', name: this.name });
   }
 
   joinRoom(code) {
-    this.send({ type: 'join_room', code: code.toUpperCase() });
+    this.send({ type: 'join_room', code: code.toUpperCase(), name: this.name });
   }
 
   setReady() {
@@ -148,6 +158,14 @@ export class MultiplayerClient {
 
   sendGameOver(reason) {
     this.send({ type: 'game_over', reason });
+  }
+
+  sendRetry() {
+    this.send({ type: 'player_retry' });
+  }
+
+  sendExitSession() {
+    this.send({ type: 'exit_session' });
   }
 
   leaveRoom() {

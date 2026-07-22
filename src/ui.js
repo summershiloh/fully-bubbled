@@ -10,7 +10,8 @@ const screens = {
   title: $('titleScreen'),
   lobby: $('lobbyScreen'),
   controls: $('controlsScreen'),
-  game: $('gameHUD')
+  game: $('gameHUD'),
+  mp: $('mpHUD')
 };
 
 const ui = {
@@ -28,6 +29,7 @@ const ui = {
   btnBack: $('btnBackToMenu'),
   btnRetry: $('btnRetry'),
   codeInput: $('codeInput'),
+  playerNameInput: $('playerNameInput'),
   lobbyMain: $('lobbyMain'),
   lobbyJoinInput: $('lobbyJoinInput'),
   lobbyStatus: $('lobbyStatus'),
@@ -44,7 +46,29 @@ const ui = {
   overlayTitle: $('overlayTitle'),
   overlayMessage: $('overlayMessage'),
   overlayScore: $('overlayScore'),
-  connectionStatus: $('connectionStatus')
+  connectionStatus: $('connectionStatus'),
+  mpOverlay1: $('mpOverlay1'),
+  mpOverlay2: $('mpOverlay2'),
+  mpOverlayTitle1: $('mpOverlayTitle1'),
+  mpOverlayTitle2: $('mpOverlayTitle2'),
+  mpOverlayScore1: $('mpOverlayScore1'),
+  mpOverlayScore2: $('mpOverlayScore2'),
+  mpOverlayWaiting1: $('mpOverlayWaiting1'),
+  mpOverlayWaiting2: $('mpOverlayWaiting2'),
+  mpOverlayButtons1: $('mpOverlayButtons1'),
+  mpOverlayButtons2: $('mpOverlayButtons2'),
+  mpRetry1: $('mpRetry1'),
+  mpExit1: $('mpExit1'),
+  mpRetry2: $('mpRetry2'),
+  mpExit2: $('mpExit2'),
+  playerNameTag1: $('playerNameTag1'),
+  playerNameTag2: $('playerNameTag2'),
+  hudScore1: $('hudScore1'),
+  hudScore2: $('hudScore2'),
+  hudLevel1: $('hudLevel1'),
+  hudLevel2: $('hudLevel2'),
+  hudTimer1: $('hudTimer1'),
+  hudTimer2: $('hudTimer2')
 };
 
 export function getUI() { return ui; }
@@ -61,8 +85,12 @@ export function showScreen(name) {
   if (name === 'game' && screens.game) {
     screens.game.style.display = 'flex';
     screens.game.classList.add('active');
+  } else if (name === 'mp' && screens.mp) {
+    screens.mp.style.display = 'flex';
+    screens.mp.classList.add('active');
   } else {
     if (screens.game) screens.game.style.display = 'none';
+    if (screens.mp) screens.mp.style.display = 'none';
     if (name === 'title' && screens.title) screens.title.classList.add('active');
     if (name === 'lobby' && screens.lobby) screens.lobby.classList.add('active');
     if (name === 'controls' && screens.controls) screens.controls.classList.add('active');
@@ -75,6 +103,30 @@ export function showGameOverlay(title, message) {
   if (ui.overlayTitle) ui.overlayTitle.textContent = title;
   if (ui.overlayMessage) ui.overlayMessage.textContent = message;
   if (ui.gameOverlay) ui.gameOverlay.style.display = 'flex';
+}
+
+export function showMultiplayerOverlay(side, title, score, showButtons, showWaiting) {
+  const suffix = side;
+  const overlay = ui['mpOverlay' + suffix];
+  const titleEl = ui['mpOverlayTitle' + suffix];
+  const scoreEl = ui['mpOverlayScore' + suffix];
+  const waitingEl = ui['mpOverlayWaiting' + suffix];
+  const buttonsEl = ui['mpOverlayButtons' + suffix];
+  if (titleEl) titleEl.textContent = title;
+  if (scoreEl) scoreEl.textContent = score != null ? `SCORE: ${score}` : '';
+  if (waitingEl) waitingEl.style.display = showWaiting ? 'block' : 'none';
+  if (buttonsEl) buttonsEl.style.display = showButtons ? 'flex' : 'none';
+  if (overlay) overlay.style.display = 'flex';
+}
+
+export function hideMultiplayerOverlay(side) {
+  const overlay = ui['mpOverlay' + side];
+  if (overlay) overlay.style.display = 'none';
+}
+
+export function hideAllMultiplayerOverlays() {
+  hideMultiplayerOverlay(1);
+  hideMultiplayerOverlay(2);
 }
 
 export function formatTime(seconds) {
@@ -93,37 +145,72 @@ function updatePlayersList() {
   }).join('');
 }
 
-export function updateHUD(event) {
-  switch (event.type) {
-    case 'score_update':
-      if (ui.hudScore) ui.hudScore.textContent = `SCORE: ${event.score}`;
-      if (gameScene?.isMultiplayer && multiplayer) multiplayer.sendGameState({ score: event.score });
-      break;
-    case 'level_complete':
-      if (ui.hudLevel) ui.hudLevel.textContent = `LEVEL ${event.level}`;
-      break;
-    case 'game_tick':
-      if (ui.hudTimer) ui.hudTimer.textContent = formatTime(event.gameTime);
-      if (gameScene) {
-        const timerEl = document.querySelector('#descendTimerValue');
-        if (timerEl) {
-          const remaining = Math.max(0, gameScene.descendInterval - gameScene.descendTimer);
-          timerEl.textContent = remaining.toFixed(1);
-          timerEl.style.color = remaining > 5 ? '#ff8844' : remaining > 2 ? '#ffdd44' : '#ff4444';
+export function updateHUD(event, side) {
+  const s = side || 0;
+  if (s === 0) {
+    switch (event.type) {
+      case 'score_update':
+        if (ui.hudScore) ui.hudScore.textContent = `SCORE: ${event.score}`;
+        if (gameScene?.isMultiplayer && multiplayer) multiplayer.sendGameState({ score: event.score });
+        break;
+      case 'level_complete':
+        if (ui.hudLevel) ui.hudLevel.textContent = `LEVEL ${event.level}`;
+        break;
+      case 'game_tick':
+        if (ui.hudTimer) ui.hudTimer.textContent = formatTime(event.gameTime);
+        if (gameScene) {
+          const timerEl = document.querySelector('#descendTimerValue');
+          if (timerEl) {
+            const remaining = Math.max(0, gameScene.descendInterval - gameScene.descendTimer);
+            timerEl.textContent = remaining.toFixed(1);
+            timerEl.style.color = remaining > 5 ? '#ff8844' : remaining > 2 ? '#ffdd44' : '#ff4444';
+          }
         }
-      }
-      break;
-    case 'game_over':
-      gameLoopRunning = false;
-      showGameOverlay('GAME OVER', event.reason || 'Last row breached!');
-      if (ui.overlayScore) ui.overlayScore.textContent = `SCORE: ${event.score || 0}`;
-      break;
+        break;
+      case 'game_over':
+        gameLoopRunning = false;
+        showGameOverlay('GAME OVER', event.reason || 'Last row breached!');
+        if (ui.overlayScore) ui.overlayScore.textContent = `SCORE: ${event.score || 0}`;
+        break;
+    }
+  } else {
+    const suffix = s;
+    switch (event.type) {
+      case 'score_update':
+        const scoreEl = ui['hudScore' + suffix];
+        if (scoreEl) scoreEl.textContent = `SCORE: ${event.score}`;
+        break;
+      case 'level_complete':
+        const levelEl = ui['hudLevel' + suffix];
+        if (levelEl) levelEl.textContent = `LEVEL ${event.level}`;
+        break;
+      case 'game_tick':
+        const timerEl = ui['hudTimer' + suffix];
+        if (timerEl) timerEl.textContent = formatTime(event.gameTime);
+        break;
+      case 'game_over':
+        showMultiplayerOverlay(suffix, 'GAME OVER', event.score || 0, true, false);
+        break;
+    }
   }
 }
 
+export function getPlayerName() {
+  return ui.playerNameInput?.value?.trim() || '';
+}
+
+export function setPlayerName(name) {
+  if (ui.playerNameInput) ui.playerNameInput.value = name;
+}
+
 export function initLobbyUI() {
+  const randomName = 'Player_' + Math.random().toString(36).substr(2, 4).toUpperCase();
+  if (ui.playerNameInput) ui.playerNameInput.value = randomName;
+
   ui.btnCreate.addEventListener('click', () => {
     if (!multiplayer || !multiplayer.connected) { setLobbyStatus('Connecting... please wait.'); return; }
+    const name = getPlayerName();
+    if (name) multiplayer.setName(name);
     setLobbyStatus('Creating room...');
     multiplayer.createRoom();
   });
@@ -135,8 +222,11 @@ export function initLobbyUI() {
 
   ui.btnSubmit.addEventListener('click', () => {
     const code = ui.codeInput.value.trim().toUpperCase();
-    if (code.length === 4 && multiplayer) multiplayer.joinRoom(code);
-    else setLobbyStatus('Please enter a 4-character code');
+    if (code.length === 4 && multiplayer) {
+      const name = getPlayerName();
+      if (name) multiplayer.setName(name);
+      multiplayer.joinRoom(code);
+    } else setLobbyStatus('Please enter a 4-character code');
   });
 
   ui.btnCancel.addEventListener('click', () => {
@@ -185,7 +275,7 @@ export function initLobbyUI() {
   });
 }
 
-export function setupMultiplayerHandlers(multiplayerClient, onGameStart) {
+export function setupMultiplayerHandlers(multiplayerClient, onGameStart, onPlayerGameOver, onPlayerRetry, onSessionCountdown, onSessionEnd) {
   multiplayer = multiplayerClient;
 
   multiplayer.on('room_created', (msg) => {
@@ -218,7 +308,17 @@ export function setupMultiplayerHandlers(multiplayerClient, onGameStart) {
   });
 
   multiplayer.on('game_start', (msg) => { if (onGameStart) onGameStart(msg); });
+
+  multiplayer.on('player_game_over', (msg) => { if (onPlayerGameOver) onPlayerGameOver(msg); });
+
+  multiplayer.on('player_retry', (msg) => { if (onPlayerRetry) onPlayerRetry(msg); });
+
+  multiplayer.on('session_countdown', (msg) => { if (onSessionCountdown) onSessionCountdown(msg); });
+
+  multiplayer.on('session_end', (msg) => { if (onSessionEnd) onSessionEnd(msg); });
+
   multiplayer.on('error', (msg) => setLobbyStatus(`Error: ${msg.message}`));
+
   multiplayer.on('game_over', (msg) => {
     gameLoopRunning = false;
     const isWin = msg.winner === multiplayer?.clientId;
@@ -242,5 +342,3 @@ export function initTitleUI(onSingle, onMulti) {
     if (onSingle) onSingle();
   });
 }
-
-
