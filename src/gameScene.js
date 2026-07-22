@@ -76,7 +76,6 @@ export class GameScene {
     );
     this.laserBeam = new LaserBeam(this.scene);
     this.laserBeam.onHit = (bubble, key) => this.processBubbleHit(bubble, key, false);
-    this.laserBeam.onInvaderHit = (invader) => this.processInvaderHit(invader);
     this.giantBall = new GiantBallProjectile(this.scene);
     this.giantBall.onHit = (bubble, key) => this.processBubbleHit(bubble, key, false, true);
     this.giantBall.onInvaderHit = (invader) => this.processInvaderHit(invader);
@@ -843,7 +842,20 @@ export class GameScene {
     }
     this.laserBeam.setAimTarget(laserTargetX);
     this.laserBeam.setPlayerPosition(this.playerX, this.playerY);
-    this.laserBeam.update(delta, this.bubbles, this.invaders);
+    this.laserBeam.update(delta, this.bubbles);
+    if (this.laserBeam.active) {
+      const bX = this.laserBeam.aimX;
+      const bTop = this.laserBeam.playerY + 26;
+      const bBot = this.laserBeam.playerY - 0.5;
+      for (const inv of this.invaders) {
+        if (!inv.alive || inv.popTime > 0) continue;
+        const ix = inv.group.position.x;
+        const iy = inv.group.position.y;
+        if (iy > bBot && iy < bTop && Math.abs(ix - bX) < 1.3) {
+          this.processInvaderHit(inv);
+        }
+      }
+    }
     this.giantBall.update(delta, this.bubbles, this.leftBound, this.rightBound, this.ceilY, this.floorY, this.invaders);
 
     let removeKeys = [];
