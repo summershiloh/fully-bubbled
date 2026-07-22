@@ -2,6 +2,7 @@ let gameScene = null;
 let fireInterval = null;
 let touchX = 0, touchY = 0;
 let isTouching = false;
+let lastTouchFireTime = 0;
 
 function updateTouchAim(clientX, clientY) {
   const gs = gameScene;
@@ -79,6 +80,7 @@ export function initInput(sceneRef) {
     const touch = e.touches[0];
     touchX = touch.clientX; touchY = touch.clientY;
     isTouching = true;
+    lastTouchFireTime = performance.now();
     updateTouchAim(touch.clientX, touch.clientY);
     startFire(gameScene);
   }, { passive: true });
@@ -87,25 +89,21 @@ export function initInput(sceneRef) {
     e.preventDefault();
     const touch = e.touches[0];
     updateTouchAim(touch.clientX, touch.clientY);
-    const dx = touch.clientX - touchX, dy = touch.clientY - touchY;
-    if (dx > 10) { gameScene?.handleInput('right', true); gameScene?.handleInput('left', false); }
-    else if (dx < -10) { gameScene?.handleInput('left', true); gameScene?.handleInput('right', false); }
-    else { gameScene?.handleInput('left', false); gameScene?.handleInput('right', false); }
-    gameScene?.handleInput('up', dy < -10);
-    gameScene?.handleInput('down', dy > 10);
-    touchX = touch.clientX; touchY = touch.clientY;
+    const now = performance.now();
+    if (now - lastTouchFireTime > 80) {
+      fireOnce(gameScene);
+      lastTouchFireTime = now;
+    }
   }, { passive: false });
 
   document.addEventListener('touchend', () => {
     isTouching = false;
-    ['left','right','up','down'].forEach(d => gameScene?.handleInput(d, false));
     if (gameScene) gameScene.mouseInView = false;
     stopFire();
   });
 
   document.addEventListener('touchcancel', () => {
     isTouching = false;
-    ['left','right','up','down'].forEach(d => gameScene?.handleInput(d, false));
     if (gameScene) gameScene.mouseInView = false;
     stopFire();
   });
