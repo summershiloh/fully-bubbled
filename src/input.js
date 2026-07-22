@@ -1,6 +1,22 @@
 let gameScene = null;
 let fireInterval = null;
 let touchX = 0, touchY = 0;
+let isTouching = false;
+
+function updateTouchAim(clientX, clientY) {
+  const gs = gameScene;
+  if (!gs || !gs.canvas) return;
+  const rect = gs.canvas.getBoundingClientRect();
+  gs.mouseX = clientX - rect.left;
+  gs.mouseY = clientY - rect.top;
+  gs.mouseInView = true;
+
+  const reticle = document.querySelector('#targetReticle');
+  if (reticle && isGameActive()) {
+    reticle.style.left = clientX + 'px';
+    reticle.style.top = clientY + 'px';
+  }
+}
 
 function fireOnce(gs) {
   if (!gs || !gs.isRunning || gs.gameOver || gs.firingPaused) return;
@@ -62,12 +78,15 @@ export function initInput(sceneRef) {
   document.addEventListener('touchstart', (e) => {
     const touch = e.touches[0];
     touchX = touch.clientX; touchY = touch.clientY;
+    isTouching = true;
+    updateTouchAim(touch.clientX, touch.clientY);
     startFire(gameScene);
-  });
+  }, { passive: true });
 
   document.addEventListener('touchmove', (e) => {
     e.preventDefault();
     const touch = e.touches[0];
+    updateTouchAim(touch.clientX, touch.clientY);
     const dx = touch.clientX - touchX, dy = touch.clientY - touchY;
     if (dx > 10) { gameScene?.handleInput('right', true); gameScene?.handleInput('left', false); }
     else if (dx < -10) { gameScene?.handleInput('left', true); gameScene?.handleInput('right', false); }
@@ -78,7 +97,16 @@ export function initInput(sceneRef) {
   }, { passive: false });
 
   document.addEventListener('touchend', () => {
+    isTouching = false;
     ['left','right','up','down'].forEach(d => gameScene?.handleInput(d, false));
+    if (gameScene) gameScene.mouseInView = false;
+    stopFire();
+  });
+
+  document.addEventListener('touchcancel', () => {
+    isTouching = false;
+    ['left','right','up','down'].forEach(d => gameScene?.handleInput(d, false));
+    if (gameScene) gameScene.mouseInView = false;
     stopFire();
   });
 }
