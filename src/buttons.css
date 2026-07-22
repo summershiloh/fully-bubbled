@@ -1,0 +1,50 @@
+.btn-bubble {
+  position: relative;
+  font-family: 'Inter', 'Trebuchet MS', 'Segoe UI', Tahoma, Arial, sans-serif;
+  font-size: clamp(1.1rem, 3vw, 2.2rem);
+  font-weight: 700;
+  padding: 0.6em 1.2em;
+  min-width: 240px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  transition: background 0.15s ease, color 0.15s ease;
+  z-index: 1;
+}
+
+.btn-bubble:hover {
+  background: #fff;
+  color: #000;
+  animation: btnJiggle 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.btn-bubble:active {
+  transform: scale(0.95);
+  transition: transform 0.08s ease;
+}
+
+@keyframes btnJiggle {
+  0% { transform: scale(1); }
+  15% { transform: scale(1.04) rotate(-0.5deg); }
+  30% { transform: scale(0.96) rotate(0.5deg); }
+  45% { transform: scale(1.02) rotate(-0.3deg); }
+  60% { transform: scale(0.98) rotate(0.3deg); }
+  80% { transform: scale(1.01); }
+  100% { transform: scale(1); }
+}
+
+.menu-actions .btn-bubble {
+  width: 100%;
+  min-width: 0;
+}
+
+.overlay-buttons {
+  display: flex;
+  gap: 0.8em;
+  justify-content: center;
+  flex-wrap: wrap;
+}

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fully Bubbled</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css" />
+  <link rel="stylesheet" href="/src/buttons.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Title Screen -->
+    <div id="titleScreen" class="screen active">
+      <div class="title-bg"></div>
+      <div class="title-content">
+        <p class="copyright">Summershiloh 2016</p>
+        <h1 class="game-title">
+          <span class="t-pink">F</span><span class="t-yellow">U</span><span class="t-green">L</span><span class="t-cyan">L</span><span class="t-yellow">Y</span>
+          <span class="t-pink">B</span><span class="t-orange">U</span><span class="t-green">B</span><span class="t-cyan">B</span><span class="t-yellow">L</span><span class="t-pink">E</span><span class="t-orange">D</span>
+        </h1>
+        <p class="subtitle">JIGGLY BUBBLER LIKE NO OTHER</p>
+        <div class="menu-buttons">
+          <button id="btnSinglePlayer" class="btn-bubble">SINGLE PLAYER</button>
+          <button id="btnMultiplayer" class="btn-bubble">MULTIPLAYER</button>
+          <button id="btnControls" class="btn-bubble">CONTROLS</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lobby Screen -->
+      <div id="lobbyScreen" class="screen">
+      <div class="lobby-panel">
+        <h2 class="lobby-title">MULTIPLAYER LOBBY</h2>
+        <div id="lobbyMain" class="lobby-main">
+          <button id="btnCreateRoom" class="btn-bubble">CREATE ROOM</button>
+          <button id="btnJoinRoom" class="btn-bubble">JOIN ROOM</button>
+          <button id="btnLobbyBack" class="btn-bubble">BACK</button>
+        </div>
+        <div id="lobbyJoinInput" class="lobby-join-input" style="display:none;">
+          <input type="text" id="codeInput" maxlength="4" placeholder="CODE" class="code-field" />
+          <div class="lobby-join-actions">
+            <button id="btnSubmitCode" class="btn-bubble">JOIN</button>
+            <button id="btnCancelCode" class="btn-bubble">CANCEL</button>
+          </div>
+        </div>
+        <div id="lobbyStatus" class="lobby-status"></div>
+        <div id="roomInfo" class="room-info" style="display:none;">
+          <div class="room-code-display">
+            CODE: <span id="roomCodeDisplay" class="code-glow">----</span>
+          </div>
+          <div id="playersInRoom" class="players-list"></div>
+          <button id="btnReady" class="btn-bubble">READY</button>
+          <button id="btnLeaveRoom" class="btn-bubble">LEAVE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Screen -->
+    <div id="controlsScreen" class="screen">
+      <div class="controls-panel">
+        <h2 class="controls-title">HOW TO PLAY</h2>
+        <div class="controls-grid">
+          <div class="controls-section">
+            <div class="controls-icon">&#128187;</div>
+            <h3 class="controls-heading">MOUSE</h3>
+            <p class="controls-text">Move mouse to aim</p>
+            <p class="controls-text">Left click to fire</p>
+            <p class="controls-text">Hold to rapid fire</p>
+          </div>
+          <div class="controls-section">
+            <div class="controls-icon">&#9000;</div>
+            <h3 class="controls-heading">KEYBOARD</h3>
+            <p class="controls-text"><span class="key">A</span><span class="key">D</span> or <span class="key">&#8592;</span><span class="key">&#8594;</span> to move</p>
+            <p class="controls-text"><span class="key">SPACE</span> to fire</p>
+          </div>
+          <div class="controls-section">
+            <div class="controls-icon">&#128241;</div>
+            <h3 class="controls-heading">MOBILE</h3>
+            <p class="controls-text">Drag to move</p>
+            <p class="controls-text">Tap to fire</p>
+          </div>
+        </div>
+        <div class="controls-rules">
+          <p>&#8226; Shoot white bullets at colored bubbles</p>
+          <p>&#8226; <span class="hl-explosive">Orange glowing</span> = explosive — bursts nearby bubbles</p>
+          <p>&#8226; <span class="hl-fragile">Small dim</span> = fragile — pops instantly</p>
+          <p>&#8226; Don't let bubbles cross the bottom line!</p>
+        </div>
+        <button id="btnControlsBack" class="btn-bubble">BACK</button>
+      </div>
+    </div>
+
+    <!-- Game HUD -->
+    <div id="gameHUD" class="screen" style="display:none;">
+      <div class="hud-top-bar">
+        <div id="powerupFill"></div>
+        <div class="hud-info-row">
+          <div class="hud-group hud-left">
+            <div id="hudScore" class="hud-score">SCORE: 0</div>
+          </div>
+          <div class="hud-group hud-center">
+            <div id="hudLevel" class="hud-level">LEVEL 1</div>
+            <div class="hud-sep"></div>
+            <div id="hudTimer" class="hud-timer">0:00</div>
+            <div class="hud-sep"></div>
+            <div class="hud-push-group">
+              <span id="descendTimerValue" class="hud-push-value">--</span>
+              <span class="hud-push-label">PUSH</span>
+            </div>
+          </div>
+          <div class="hud-group hud-right">
+            <span id="powerupText" class="powerup-text"></span>
+            <span id="streamingSpinner" class="streaming-spinner" style="display:none;"></span>
+            <button id="btnMenu" class="hud-fs-btn" title="Menu" aria-label="Menu">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="5" r="1.5"></circle>
+                <circle cx="12" cy="12" r="1.5"></circle>
+                <circle cx="12" cy="19" r="1.5"></circle>
+              </svg>
+            </button>
+            <button id="btnFullscreen" class="hud-fs-btn" title="Toggle Fullscreen" aria-label="Fullscreen">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15,3 21,3 21,9"></polyline>
+                <polyline points="9,21 3,21 3,15"></polyline>
+                <line x1="21" y1="3" x2="14" y2="10"></line>
+                <line x1="3" y1="21" x2="10" y2="14"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="gameMenuOverlay" class="game-menu-overlay" style="display:none;">
+        <div class="game-menu-panel">
+          <button id="btnMenuClose" class="menu-close-btn" aria-label="Close">&#10005;</button>
+          <h3 class="menu-panel-title">MENU</h3>
+          <div class="menu-volume-row">
+            <span class="menu-volume-label">SFX</span>
+            <input type="range" id="sfxSlider" class="menu-slider" min="0" max="100" value="10" />
+          </div>
+          <div class="menu-volume-row">
+            <span class="menu-volume-label">MUSIC</span>
+            <input type="range" id="musicSlider" class="menu-slider" min="0" max="100" value="0" />
+          </div>
+          <div class="menu-volume-row">
+            <span class="menu-volume-label">SFX THEME</span>
+            <label class="menu-toggle">
+              <input type="checkbox" id="customSfxToggle" checked />
+              <span class="menu-toggle-track"></span>
+            </label>
+          </div>
+          <div class="menu-actions">
+            <button id="btnMenuRetry" class="btn-bubble">RETRY</button>
+            <button id="btnMenuExit" class="btn-bubble">EXIT</button>
+          </div>
+        </div>
+      </div>
+      </div>
+      <div id="trackName" class="track-name" style="display:none;"></div>
+      <div id="hudOpponent" class="hud-opponent" style="display:none;">
+        <div id="opponentName" class="opponent-name">Opponent</div>
+        <div id="opponentScore" class="opponent-score">0</div>
+      </div>
+
+      <div id="gameOverlay" class="game-overlay" style="display:none;">
+        <div class="overlay-content">
+          <h2 id="overlayTitle" class="overlay-title">GAME OVER</h2>
+          <p id="overlayMessage" class="overlay-message"></p>
+          <p id="overlayScore" class="overlay-score"></p>
+          <div class="overlay-buttons">
+            <button id="btnRetry" class="btn-bubble">RETRY</button>
+            <button id="btnBackToMenu" class="btn-bubble">TITLE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connection status -->
+    <div id="connectionStatus" class="connection-status" style="display:none;">
+      Connecting...
+    </div>
+
+    <!-- Targeting Reticle -->
+    <div id="targetReticle" class="target-reticle">
+      <div class="reticle-dot"></div>
+      <div class="reticle-ring"></div>
+      <div class="reticle-cross-h"></div>
+      <div class="reticle-cross-v"></div>
+    </div>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15,3 21,3 21,9"></polyline>
+        <polyline points="9,21 3,21 3,15"></polyline>
+        <line x1="21" y1="3" x2="14" y2="10"></line>
+        <line x1="3" y1="21" x2="10" y2="14"></line>
+      </svg>
+    </button>
+  </div>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

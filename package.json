@@ -1,0 +1,21 @@
+{
+  "name": "fully-bubbled",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "npm run build && node server.js",
+    "server": "node server.js"
+  },
+  "dependencies": {
+    "three": "^0.170.0",
+    "three-stdlib": "^2.34.0"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  },
+  "optionalDependencies": {
+    "ws": "^8.21.1"
+  }
+}
