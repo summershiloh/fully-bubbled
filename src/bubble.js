@@ -19,7 +19,7 @@ export function getRandomType(level = 1) {
   const r = Math.random();
   if (r < 0.2) return 'explosive';
   if (r < 0.35) return 'fragile';
-  if (r < 0.40 && level > 2) return 'chrome';
+  if (r < 0.37 && level > 2) return 'chrome';
   return 'normal';
 }
 

@@ -20,6 +20,7 @@ import {
   gridToX, gridToY, getNeighborPositions, getBoardBounds
 } from './game/grid.js';
 import { createBoardWalls, getBounds } from './game/board.js';
+import { Invader, getInvaderCount } from './invaders/Invader.js';
 
 export class GameScene {
   constructor(canvas, onGameEvent) {
@@ -28,6 +29,7 @@ export class GameScene {
     this.bubbles = new Map();
     this.bullets = [];
     this.particles = [];
+    this.invaders = [];
     this.score = 0;
     this.level = 1;
     this.time = 0;
@@ -192,6 +194,11 @@ export class GameScene {
       if (p.mesh) { this.scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose(); }
     }
     this.particles = [];
+    for (const inv of this.invaders) {
+      this.scene.remove(inv.group);
+      inv.dispose();
+    }
+    this.invaders = [];
     this.levelComplete = false;
     this.score = 0;
     this.gameTime = 0;
@@ -223,6 +230,15 @@ export class GameScene {
 
     this.nextColor = getRandomColor();
     this.queuedColor = getRandomColor();
+
+    const invaderCount = getInvaderCount(this.level);
+    for (let i = 0; i < invaderCount; i++) {
+      const x = this.leftBound + Math.random() * (this.rightBound - this.leftBound);
+      const y = this.ceilY + 0.5 - Math.random() * 2;
+      const invader = new Invader(x, y);
+      this.scene.add(invader.group);
+      this.invaders.push(invader);
+    }
   }
 
   setupPlayer() {
@@ -466,6 +482,29 @@ export class GameScene {
         this.removeBullet(i);
         this.processBubbleHit(hitBubble, hitKey);
         this.checkFloating();
+        continue;
+      }
+
+      let hitInvader = null;
+      let hitInvIdx = -1;
+      for (let j = 0; j < this.invaders.length; j++) {
+        const inv = this.invaders[j];
+        if (!inv.alive || inv.popTime > 0) continue;
+        const dx = b.x - inv.group.position.x;
+        const dy = b.y - inv.group.position.y;
+        if (dx * dx + dy * dy < 0.5 * 0.5 * 2.2) {
+          hitInvader = inv;
+          hitInvIdx = j;
+          break;
+        }
+      }
+
+      if (hitInvader) {
+        this.removeBullet(i);
+        hitInvader.startPop();
+        this.spawnParticles(hitInvader.group.position.x, hitInvader.group.position.y, 18);
+        this.addScore(25);
+        audio.pop();
       }
     }
   }
@@ -870,6 +909,39 @@ export class GameScene {
       }
     }
 
+    let invaderGameOver = false;
+    for (let i = this.invaders.length - 1; i >= 0; i--) {
+      const inv = this.invaders[i];
+      if (!inv.alive) {
+        if (inv.removed) {
+          this.scene.remove(inv.group);
+          inv.dispose();
+          this.invaders.splice(i, 1);
+        }
+        continue;
+      }
+      if (inv.popTime > 0) {
+        inv.updatePop();
+        if (inv.removed) {
+          this.scene.remove(inv.group);
+          inv.dispose();
+          this.invaders.splice(i, 1);
+        }
+        continue;
+      }
+      if (inv.update(this.time, delta, this.playerX, this.leftBound, this.rightBound, this.floorY)) {
+        invaderGameOver = true;
+      }
+    }
+
+    if (invaderGameOver && !this.gameOver) {
+      this.gameOver = true;
+      audio.gameOver();
+      if (this.onGameEvent) {
+        this.onGameEvent({ type: 'game_over', reason: 'Invader breached the line!', score: this.score });
+      }
+    }
+
     if (!this.gameOver) {
       this.checkWinCondition();
       this.descendTimer += delta;
@@ -914,6 +986,11 @@ export class GameScene {
       bubble.dispose();
     }
     this.bubbles.clear();
+    for (const inv of this.invaders) {
+      this.scene.remove(inv.group);
+      inv.dispose();
+    }
+    this.invaders = [];
     if (this.laserBeam) this.laserBeam.dispose();
     if (this.giantBall) this.giantBall.dispose();
     if (this.powerupMgr) this.powerupMgr.dispose();

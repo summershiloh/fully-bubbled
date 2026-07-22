@@ -362,3 +362,53 @@ export function createChromeMaterial(color) {
     side: 0
   });
 }
+
+export function createInvaderMaterial() {
+  return new ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uOpacity: { value: 1.0 },
+      uJiggle: { value: 0 }
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vViewDir;
+      uniform float uTime;
+      uniform float uJiggle;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        vec4 worldPos = modelMatrix * vec4(position, 1.0);
+        vec3 viewDir = normalize(cameraPosition - worldPos.xyz);
+        vViewDir = viewDir;
+        float jiggle = uJiggle;
+        vec3 displaced = position + normal * (jiggle * 0.15 * sin(position.x * 3.0 + uTime * 2.0) * sin(position.y * 3.0 + uTime * 2.5) * sin(position.z * 3.0 + uTime * 3.0));
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vNormal;
+      varying vec3 vViewDir;
+      uniform float uTime;
+      uniform float uOpacity;
+      void main() {
+        vec3 normal = normalize(vNormal);
+        vec3 viewDir = normalize(vViewDir);
+        float fresnel = 1.0 - max(dot(normal, viewDir), 0.0);
+        fresnel = pow(fresnel, 2.0);
+        float blink = 0.5 + 0.5 * sin(uTime * 3.0);
+        vec3 redColor = vec3(1.0, 0.08, 0.03);
+        vec3 whiteColor = vec3(1.0, 0.95, 0.9);
+        vec3 baseColor = mix(redColor, whiteColor, blink);
+        float glow = fresnel * (1.2 + 0.8 * blink);
+        vec3 glowColor = vec3(1.0, 0.3, 0.1) * glow;
+        float pulse = 0.85 + 0.15 * sin(uTime * 5.0);
+        vec3 finalColor = (baseColor + glowColor) * pulse * 1.4;
+        gl_FragColor = vec4(finalColor, uOpacity);
+      }
+    `,
+    transparent: true,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    side: FrontSide
+  });
+}
