@@ -10,12 +10,10 @@
   },
   "dependencies": {
     "three": "^0.170.0",
-    "three-stdlib": "^2.34.0"
+    "three-stdlib": "^2.34.0",
+    "ws": "^8.21.1"
   },
   "devDependencies": {
     "vite": "^6.0.0"
-  },
-  "optionalDependencies": {
-    "ws": "^8.21.1"
   }
 }

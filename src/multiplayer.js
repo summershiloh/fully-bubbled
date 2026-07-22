@@ -68,7 +68,7 @@ export class MultiplayerClient {
 
   getServerUrl() {
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${proto}//${location.host}`;
+    return `${proto}//${location.host}/api/ws`;
   }
 
   handleMessage(msg) {
