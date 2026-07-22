@@ -49,6 +49,7 @@ export class GameScene {
     this.mouseX = 0;
     this.mouseY = 0;
     this.mouseInView = false;
+    this.pointerActive = false;
     this._tmpVec = new Vector3();
     this._mouseWorld = new Vector3();
     this._mousePlane = new Plane(new Vector3(0, 0, 1), 0);
@@ -841,6 +842,23 @@ export class GameScene {
 
     this.powerupMgr.update(delta);
     this.updatePlayer(delta);
+
+    if (this.pointerActive && this.mouseInView && !this.firingPaused) {
+      this.fireTimer += delta;
+      if (this.fireTimer >= this.fireRate) {
+        this.fireTimer = 0;
+        if (this.powerupMgr.isFull) {
+          this.tryActivatePowerup();
+        } else if (this.giantBallActive) {
+          this._fireGiantBall();
+        } else if (!this.powerupMgr.laserActive) {
+          this.fireBullet();
+        }
+      }
+    } else {
+      this.fireTimer = this.fireRate;
+    }
+
     this.updateBullets(delta);
     this.updateParticles(delta);
 

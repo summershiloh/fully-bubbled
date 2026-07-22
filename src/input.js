@@ -1,8 +1,4 @@
 let gameScene = null;
-let fireInterval = null;
-let touchX = 0, touchY = 0;
-let isTouching = false;
-let lastTouchFireTime = 0;
 
 function updateTouchAim(clientX, clientY) {
   const gs = gameScene;
@@ -17,40 +13,6 @@ function updateTouchAim(clientX, clientY) {
     reticle.style.left = clientX + 'px';
     reticle.style.top = clientY + 'px';
   }
-}
-
-function fireOnce(gs) {
-  if (!gs || !gs.isRunning || gs.gameOver || gs.firingPaused) return;
-  if (gs.powerupMgr?.isFull) {
-    gs.tryActivatePowerup();
-  } else if (gs.giantBallActive) {
-    gs._fireGiantBall();
-  } else if (!gs.powerupMgr?.laserActive) {
-    gs.fireBullet();
-  }
-}
-
-function startFire(gs) {
-  fireOnce(gs);
-  if (fireInterval) clearInterval(fireInterval);
-  if (!gs || gs.powerupMgr?.laserActive || gs.giantBallActive || gs.powerupMgr?.isFull) return;
-  fireInterval = setInterval(() => {
-    if (!gs || !gs.isRunning || gs.gameOver || gs.firingPaused) {
-      clearInterval(fireInterval); fireInterval = null; return;
-    }
-    if (gs.powerupMgr?.isFull) {
-      gs.tryActivatePowerup();
-      clearInterval(fireInterval); fireInterval = null; return;
-    }
-    if (gs.powerupMgr?.laserActive || gs.giantBallActive) {
-      clearInterval(fireInterval); fireInterval = null; return;
-    }
-    gs.fireBullet();
-  }, 100);
-}
-
-function stopFire() {
-  if (fireInterval) { clearInterval(fireInterval); fireInterval = null; }
 }
 
 export function initInput(sceneRef) {
@@ -78,34 +40,28 @@ export function initInput(sceneRef) {
 
   document.addEventListener('touchstart', (e) => {
     const touch = e.touches[0];
-    touchX = touch.clientX; touchY = touch.clientY;
-    isTouching = true;
-    lastTouchFireTime = performance.now();
     updateTouchAim(touch.clientX, touch.clientY);
-    startFire(gameScene);
+    if (gameScene) gameScene.pointerActive = true;
   }, { passive: true });
 
   document.addEventListener('touchmove', (e) => {
     e.preventDefault();
     const touch = e.touches[0];
     updateTouchAim(touch.clientX, touch.clientY);
-    const now = performance.now();
-    if (now - lastTouchFireTime > 80) {
-      fireOnce(gameScene);
-      lastTouchFireTime = now;
-    }
   }, { passive: false });
 
   document.addEventListener('touchend', () => {
-    isTouching = false;
-    if (gameScene) gameScene.mouseInView = false;
-    stopFire();
+    if (gameScene) {
+      gameScene.pointerActive = false;
+      gameScene.mouseInView = false;
+    }
   });
 
   document.addEventListener('touchcancel', () => {
-    isTouching = false;
-    if (gameScene) gameScene.mouseInView = false;
-    stopFire();
+    if (gameScene) {
+      gameScene.pointerActive = false;
+      gameScene.mouseInView = false;
+    }
   });
 }
 
@@ -121,12 +77,12 @@ export function initReticleAndFire(sceneRef) {
 
   document.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
-    startFire(gameScene);
+    if (gameScene) gameScene.pointerActive = true;
   });
 
   document.addEventListener('mouseup', (e) => {
     if (e.button !== 0) return;
-    stopFire();
+    if (gameScene) gameScene.pointerActive = false;
   });
 
   const reticleObserver = new MutationObserver(() => {
